@@ -1,0 +1,42 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.5/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.5",
+    "version": "1.0.0",
+    "id": "b864d3bf-97c7-4053-baae-37ec23bd8f95",
+    "packageName": "com.microsoft.teams.fileshare",
+    "developer": {
+        "name": "DragonGate",
+        "websiteUrl": "https://dragongate.o365cn.com",
+        "privacyUrl": "https://dragongate.o365cn.com",
+        "termsOfUseUrl": "https://dragongate.o365cn.com"
+    },
+    "icons": {
+        "color": "color.png",
+        "outline": "outline.png"
+    },
+    "name": {
+        "short": "FileShare",
+        "full": "Share files to WeChat"
+    },
+    "description": {
+        "short": "Share files to WeChat in Groups",
+        "full": "User can select file from Office 365 Group and Share to WeChat"
+    },
+    "accentColor": "#FFFFFF",
+    "configurableTabs": [
+        {
+            "configurationUrl": "https://test.com",
+            "canUpdateConfiguration": true,
+            "scopes": [
+                "team"
+            ]
+        }
+    ],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "validDomains": [
+        "test.com"
+    ]
+}
