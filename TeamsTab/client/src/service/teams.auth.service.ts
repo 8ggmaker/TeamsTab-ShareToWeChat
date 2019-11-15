@@ -1,8 +1,9 @@
 import * as microsoftTeams from '@microsoft/teams-js'
 import AuthenticationContext from "adal-angular";
 import { AudioHTMLAttributes } from 'react';
+import { Config } from '../Config';
 
-export class TeamAuthService{
+export class TeamsAuthService{
     private authContext:AuthenticationContext;
     private applicationConfig:AuthenticationContext.Options;
     private loginPromise:Promise<any>;
@@ -22,11 +23,11 @@ export class TeamAuthService{
         // Configure ADAL
         this.applicationConfig = {
           tenant: tenantId,
-          clientId: "36b1586d-b1da-45d2-9b32-899c3757b6f8",
+          clientId: Config.ClientId,
           endpoints: {
-            api: "36b1586d-b1da-45d2-9b32-899c3757b6f8"
+            api: Config.ClientId
           },
-          redirectUri: `${window.location.origin}/tab/silent-end`,
+          redirectUri: `${window.location.origin}/authend`,
           cacheLocation: "localStorage",
           navigateToLoginRequestUrl: false
         };
@@ -45,7 +46,7 @@ export class TeamAuthService{
             this.ensureLoginHint().then(() => {
               // Start the login flow
               microsoftTeams.authentication.authenticate({
-                url: `${window.location.origin}/tab/silent-start`,
+                url: `${window.location.origin}/authstart`,
                 width: 600,
                 height: 535,
                 successCallback: result => {
@@ -98,8 +99,8 @@ export class TeamAuthService{
         return new Promise((resolve, reject) => {
           microsoftTeams.getContext(context => {
             const scopes = encodeURIComponent(
-              "email openid profile offline_access User.Read"
-            );
+              Config.Scopes
+              );
     
             // Setup extra query parameters for ADAL
             // - openid and profile scope adds profile information to the id_token

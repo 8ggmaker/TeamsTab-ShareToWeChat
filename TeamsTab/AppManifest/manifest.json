@@ -25,7 +25,7 @@
     "accentColor": "#FFFFFF",
     "configurableTabs": [
         {
-            "configurationUrl": "https://test.com",
+            "configurationUrl": "https://99f60573.ngrok.io/config",
             "canUpdateConfiguration": true,
             "scopes": [
                 "team"
@@ -37,6 +37,17 @@
         "messageTeamMembers"
     ],
     "validDomains": [
-        "test.com"
+        "ngrok.io"
+    ],
+    "webApplicationInfo": {
+        "id": "44fcaddd-31e2-4075-8371-450450539d81",
+        "resource": "api://microsoft.onmicrosoft.com/44fcaddd-31e2-4075-8371-450450539d81/access_as_user"
+      },
+      "devicePermissions": [
+        "media",
+        "geolocation",
+        "notifications",
+        "midi",
+        "openExternal"
     ]
 }
