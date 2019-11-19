@@ -1,7 +1,7 @@
 {
     "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.5/MicrosoftTeams.schema.json",
     "manifestVersion": "1.5",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "id": "b864d3bf-97c7-4053-baae-37ec23bd8f95",
     "packageName": "com.microsoft.teams.fileshare",
     "developer": {
@@ -25,7 +25,7 @@
     "accentColor": "#FFFFFF",
     "configurableTabs": [
         {
-            "configurationUrl": "https://99f60573.ngrok.io/config",
+            "configurationUrl": "https://a8b3176f.ngrok.io/config",
             "canUpdateConfiguration": true,
             "scopes": [
                 "team"
@@ -37,11 +37,12 @@
         "messageTeamMembers"
     ],
     "validDomains": [
-        "ngrok.io"
+        "ngrok.io",
+        "a8b3176f.ngrok.io"
     ],
     "webApplicationInfo": {
         "id": "44fcaddd-31e2-4075-8371-450450539d81",
-        "resource": "api://microsoft.onmicrosoft.com/44fcaddd-31e2-4075-8371-450450539d81/access_as_user"
+        "resource": "api://a8b3176f.ngrok.io/44fcaddd-31e2-4075-8371-450450539d81"
       },
       "devicePermissions": [
         "media",

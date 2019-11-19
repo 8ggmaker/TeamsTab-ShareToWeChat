@@ -1,9 +1,12 @@
 import * as React from 'react';
 import authService from '../service/sso.auth.service';
+import teamfileService from '../service/team.file.service';
 import { Async } from 'office-ui-fabric-react/lib/Utilities';
 import { createListItems, IExampleItem } from '@uifabric/example-data';
-import { IColumn, buildColumns, SelectionMode, Toggle, DefaultButton } from 'office-ui-fabric-react/lib/index';
+import { IColumn, buildColumns, SelectionMode, Toggle, DefaultButton, MessageBar, MessageBarButton, MessageBarType } from 'office-ui-fabric-react/lib/index';
 import { ShimmeredDetailsList } from 'office-ui-fabric-react/lib/ShimmeredDetailsList';
+import * as microsoftTeams from "@microsoft/teams-js";
+import { ConsentConsumer } from './ConsentContext';
 
 const fileIcons: { name: string }[] = [
   { name: 'accdb' },
@@ -23,6 +26,12 @@ const fileIcons: { name: string }[] = [
   { name: 'xsn' }
 ];
 
+interface ITeamFile{
+  Type:string;
+  Name:string;
+  
+}
+
 const ITEMS_COUNT = 200;
 const INTERVAL_DELAY = 50000;
 
@@ -32,6 +41,7 @@ export interface IShimmerApplicationExampleState {
   items: IExampleItem[]; // DetailsList `items` prop is required so it expects at least an empty array.
   columns?: IColumn[];
   isDataLoaded?: boolean;
+  isInited:boolean
 }
 
 export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleState> {
@@ -45,7 +55,8 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
     this.state = {
       items: [],
       columns: _buildColumns(),
-      isDataLoaded: false
+      isDataLoaded: false,
+      isInited:false
     };
 
     this._async = new Async(this);
@@ -56,43 +67,70 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
   }
 
   componentDidMount(){
-
+    this._loadData();
   }
 
-  public lognIn(){
-      authService.login();
+  private async loadData():Promise<void>{
+    if(this.state.isInited && !this.state.isDataLoaded){
+      return;
+    }
+    microsoftTeams.getContext(async (context)=>{
+      var files = await teamfileService.getTeamsFiles(context.groupId);
+      if(files.data)
+      {
+
+      }
+    })
   }
 
   public render(): JSX.Element {
     const { items, columns, isDataLoaded } = this.state;
 
     return (
-    //   <div>
-    //     <Toggle
-    //       label="Toggle to load content"
-    //       style={{ display: 'block', marginBottom: '20px' }}
-    //       checked={isDataLoaded}
-    //       onChange={this._onLoadData}
-    //       onText="Content"
-    //       offText="Shimmer"
-    //     />
-    //     <div>
-    //       <ShimmeredDetailsList
-    //         setKey="items"
-    //         items={items}
-    //         columns={columns}
-    //         selectionMode={SelectionMode.none}
-    //         onRenderItemColumn={this._onRenderItemColumn}
-    //         enableShimmer={!isDataLoaded}
-    //         ariaLabelForShimmer="Content is being fetched"
-    //         ariaLabelForGrid="Item details"
-    //         listProps={{ renderedWindowsAhead: 0, renderedWindowsBehind: 0 }}
-    //       />
-    //     </div>
-    //   </div>
-    <DefaultButton primary={true} onClick={this.lognIn}>
-    <span className="ms-Button-label label-46">Validate</span>
-  </DefaultButton>
+      <div className="App">
+      <ConsentConsumer>
+            {({ consentRequired, requestConsent }) =>
+              consentRequired && (
+                <MessageBar
+                  messageBarType={MessageBarType.warning}
+                  isMultiline={false}
+                  dismissButtonAriaLabel="Close"
+                  actions={
+                    <div>
+                      <MessageBarButton onClick={requestConsent}>
+                        Go
+                      </MessageBarButton>
+                    </div>
+                  }
+                >
+                  TeamFiles needs your consent in order to do its work.
+                </MessageBar>
+              )
+            }
+          </ConsentConsumer>
+          {/* <Toggle
+          label="Toggle to load content"
+          style={{ display: 'block', marginBottom: '20px' }}
+          checked={isDataLoaded}
+          onChange={this._onLoadData}
+          onText="Content"
+          offText="Shimmer"
+        /> */}
+        {(isDataLoaded && items.length==0) ? 
+        (<div>No files now</div>) :
+          (<ShimmeredDetailsList
+            setKey="items"
+            items={items}
+            columns={columns}
+            selectionMode={SelectionMode.none}
+            onRenderItemColumn={this._onRenderItemColumn}
+            enableShimmer={!isDataLoaded}
+            ariaLabelForShimmer="Content is being fetched"
+            ariaLabelForGrid="Item details"
+            listProps={{ renderedWindowsAhead: 0, renderedWindowsBehind: 0 }}
+          />)
+        }
+          </div>   
     );
   }
 

@@ -7,4 +7,5 @@ export interface UserContext{
 export interface User{
     userName:string
     upn:string
+    tenantId:string
 }

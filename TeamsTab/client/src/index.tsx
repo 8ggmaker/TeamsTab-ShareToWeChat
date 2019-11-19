@@ -7,8 +7,15 @@ import { AuthEnd } from './compoents/AuthEnd';
 import{BrowserRouter  as Router,Route} from 'react-router-dom'
 import { AuthStart } from './compoents/AuthStart';
 import { TeamFiles } from './compoents/TeamFiles';
+import { Fabric } from 'office-ui-fabric-react';
+import { ConsentProvider } from './compoents/ConsentContext';
 
-ReactDOM.render( <App/>
+ReactDOM.render(  
+<Fabric>
+    <ConsentProvider>
+      <App />
+    </ConsentProvider>
+  </Fabric>
 , document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change

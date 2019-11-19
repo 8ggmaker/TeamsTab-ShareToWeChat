@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SpaServices.ReactDevelopmentServer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Http;
+using TeamsTab.Middleware;
+using TeamsTab.Service;
 
 namespace TeamsTab
 {
@@ -27,6 +30,12 @@ namespace TeamsTab
             {
                 configuration.RootPath = "client/build";
             });
+            services.AddHttpClient();
+            services.AddSingleton<ITokenService>((provider)=> {
+                var httpClientFactory = provider.GetService<IHttpClientFactory>();
+                return new TokenService(httpClientFactory, Configuration["ClientId"], Configuration["ClientSecret"]);
+            });
+            services.AddSingleton<IGraphService, GraphService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,6 +55,7 @@ namespace TeamsTab
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseSpaStaticFiles();
+            app.UseTeamsMiddleware();
 
             app.UseMvc(routes =>
             {

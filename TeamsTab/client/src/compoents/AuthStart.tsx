@@ -17,6 +17,8 @@ export class AuthStart extends React.Component{
               navigateToLoginRequestUrl: false,
               extraQueryParameter:null
             };
+
+            console.log(config.redirectUri);
     
             const scopes = encodeURIComponent(
               Config.Scopes

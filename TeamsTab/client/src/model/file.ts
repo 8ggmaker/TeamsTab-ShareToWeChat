@@ -3,7 +3,11 @@ export interface File{
 
     driveItemId:string
 
-    lastModifyBy:string
+    lastModifiedBy:string
+
+    lastModifiedDateTime:string;
+
+    fileType:string;
 
     name:string
 
