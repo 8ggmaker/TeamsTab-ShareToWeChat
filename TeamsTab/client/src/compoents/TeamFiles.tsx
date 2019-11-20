@@ -2,51 +2,45 @@ import * as React from 'react';
 import authService from '../service/sso.auth.service';
 import teamfileService from '../service/team.file.service';
 import { Async } from 'office-ui-fabric-react/lib/Utilities';
-import { createListItems, IExampleItem } from '@uifabric/example-data';
-import { IColumn, buildColumns, SelectionMode, Toggle, DefaultButton, MessageBar, MessageBarButton, MessageBarType } from 'office-ui-fabric-react/lib/index';
+import { IColumn, buildColumns, SelectionMode, IconButton, IIconProps, Modal, MessageBar, MessageBarButton,DefaultButton, MessageBarType, Icon, Button } from 'office-ui-fabric-react/lib/index';
 import { ShimmeredDetailsList } from 'office-ui-fabric-react/lib/ShimmeredDetailsList';
 import * as microsoftTeams from "@microsoft/teams-js";
 import { ConsentConsumer } from './ConsentContext';
+import { initializeIcons } from '@uifabric/icons';
+initializeIcons();
+var QRCode = require('qrcode.react');
 
-const fileIcons: { name: string }[] = [
-  { name: 'accdb' },
-  { name: 'csv' },
-  { name: 'docx' },
-  { name: 'dotx' },
-  { name: 'mpt' },
-  { name: 'odt' },
-  { name: 'one' },
-  { name: 'onepkg' },
-  { name: 'onetoc' },
-  { name: 'pptx' },
-  { name: 'pub' },
-  { name: 'vsdx' },
-  { name: 'xls' },
-  { name: 'xlsx' },
-  { name: 'xsn' }
-];
+const shareIconProps: IIconProps = { iconName: 'Share' };
 
-interface ITeamFile{
-  Type:string;
-  Name:string;
-  
+
+interface ITeamFileItem{
+  type:string;
+  name:string;
+  driveId:string;
+  driveItemId:string;
+  thumbnail:string;
+  displaySize:string;
+  lastModifiedBy:string;
+  size:number;
 }
-
-const ITEMS_COUNT = 200;
-const INTERVAL_DELAY = 50000;
-
-let _items: IExampleItem[];
 
 export interface IShimmerApplicationExampleState {
-  items: IExampleItem[]; // DetailsList `items` prop is required so it expects at least an empty array.
+  items: ITeamFileItem[]; // DetailsList `items` prop is required so it expects at least an empty array.
   columns?: IColumn[];
   isDataLoaded?: boolean;
-  isInited:boolean
+  isInited:boolean;
+  currentSharingItem?: ITeamFileItem;
+  showSharingModal:boolean;
+  sharingUrl?:string;
 }
 
-export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleState> {
-  private _lastIntervalId: number;
-  private _lastIndexWithData: number;
+interface ITeamFileProps{
+  consentRequired?: boolean,
+  setConsentRequired?: (consentRequired:boolean) => {},
+  requestConsent?: () => {}
+}
+
+export class TeamFiles extends React.Component<ITeamFileProps, IShimmerApplicationExampleState> {
   private _async: Async;
 
   constructor(props: {}) {
@@ -54,9 +48,10 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
 
     this.state = {
       items: [],
-      columns: _buildColumns(),
+      columns: buildTeamFileColumns(),
       isDataLoaded: false,
-      isInited:false
+      isInited:false,
+      showSharingModal:false
     };
 
     this._async = new Async(this);
@@ -67,7 +62,7 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
   }
 
   componentDidMount(){
-    this._loadData();
+    this.loadData();
   }
 
   private async loadData():Promise<void>{
@@ -76,18 +71,78 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
     }
     microsoftTeams.getContext(async (context)=>{
       var files = await teamfileService.getTeamsFiles(context.groupId);
-      if(files.data)
-      {
-
+      try{
+        if(files.data)
+        {
+          const tempItems:ITeamFileItem[] = [];
+          files.data.forEach(f=>{
+            const teamFileItem:ITeamFileItem = 
+            {
+              thumbnail: this.getFileIcon(f.fileType||f.extension),
+              name: f.name,
+              driveId:f.driveId,
+              driveItemId:f.driveItemId,
+              size:f.size,
+              displaySize:this.getFileSize(f.size),
+              lastModifiedBy:f.lastModifiedBy,
+              type:f.fileType || f.extension
+            }
+            tempItems.push(teamFileItem);
+          });
+          this.setState({
+            isDataLoaded:true,
+            isInited:true,
+            items:tempItems
+          })
+        }else{
+          this.setState({
+            isDataLoaded:true,
+            isInited:true,
+            items:[]
+          })
+        }
       }
+      catch(e){
+        this.props.setConsentRequired && this.props.setConsentRequired(true);
+      }
+
     })
   }
 
+
+
+  private getFileSize(size: number): string {
+    let ret: string = "";
+    if (size === 0) {
+        ret = 0 + `KB`;
+    }
+    let floorLog: number = parseInt(((Math.log(size) * Math.LOG2E) / 10).toString(), 10);
+    let num: string = parseFloat((size / Math.pow(1024, floorLog)).toString()).toFixed(2);
+    if (floorLog === 0) {
+        ret = num + `B`;
+    } else if (floorLog === 1) {
+        ret = num + `KB`;
+    } else if (floorLog === 2) {
+        ret = num + `MB`;
+    } else if (floorLog === 3) {
+        ret = num + `GB`;
+    }
+    return ret;
+}
   public render(): JSX.Element {
     const { items, columns, isDataLoaded } = this.state;
 
     return (
       <div className="App">
+      <Modal
+          isOpen={(this.state.showSharingModal)}
+          onDismiss={()=>{this.closeModal()}}
+          isBlocking={false}
+        >
+        <div>{this.state.currentSharingItem ? this.state.currentSharingItem.name : ''}</div>
+        <DefaultButton onClick={()=>{this.closeModal()}} text="Close" />
+        <QRCode value = {this.state.sharingUrl}/>
+      </Modal>
       <ConsentConsumer>
             {({ consentRequired, requestConsent }) =>
               consentRequired && (
@@ -108,14 +163,6 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
               )
             }
           </ConsentConsumer>
-          {/* <Toggle
-          label="Toggle to load content"
-          style={{ display: 'block', marginBottom: '20px' }}
-          checked={isDataLoaded}
-          onChange={this._onLoadData}
-          onText="Content"
-          offText="Shimmer"
-        /> */}
         {(isDataLoaded && items.length==0) ? 
         (<div>No files now</div>) :
           (<ShimmeredDetailsList
@@ -134,78 +181,77 @@ export class TeamFiles extends React.Component<{}, IShimmerApplicationExampleSta
     );
   }
 
-  private _loadData = (): void => {
-    this._lastIntervalId = this._async.setInterval(() => {
-      const randomQuantity: number = Math.floor(Math.random() * 10) + 1;
-      const itemsCopy = this.state.items!.slice(0);
-      itemsCopy.splice(
-        this._lastIndexWithData,
-        randomQuantity,
-        ..._items.slice(this._lastIndexWithData, this._lastIndexWithData + randomQuantity)
-      );
-      this._lastIndexWithData += randomQuantity;
-      this.setState({
-        items: itemsCopy
-      });
-    }, INTERVAL_DELAY);
-  };
-
-  private _onLoadData = (ev: React.MouseEvent<HTMLElement>, checked: boolean): void => {
-    if (!_items) {
-      _items = createListItems(ITEMS_COUNT);
-      _items.map((item: IExampleItem) => {
-        const randomFileType = this._randomFileIcon();
-        item.thumbnail = randomFileType.url;
-      });
-    }
-
-    let items: IExampleItem[];
-    const randomQuantity: number = Math.floor(Math.random() * 10) + 1;
-    if (checked) {
-      items = _items.slice(0, randomQuantity).concat(new Array(ITEMS_COUNT - randomQuantity));
-      this._lastIndexWithData = randomQuantity;
-      this._loadData();
-    } else {
-      items = [];
-      this._async.clearInterval(this._lastIntervalId);
-    }
-    this.setState({
-      isDataLoaded: checked,
-      items: items
-    });
-  };
-
-  private _onRenderItemColumn = (item: IExampleItem, index: number, column: IColumn): JSX.Element | string | number => {
+  private _onRenderItemColumn = (item: ITeamFileItem, index: number, column: IColumn): JSX.Element | string | number => {
     if (column.key === 'thumbnail') {
       return <img src={item.thumbnail} />;
+    }else if(column.key==='sharetowechat'){
+      return <IconButton iconProps={shareIconProps} onClick={()=>{this.share(item)}}/>
     }
 
-    return item[column.key as keyof IExampleItem];
+    return item[column.key as keyof ITeamFileItem];
   };
 
-  private _randomFileIcon(): { docType: string; url: string } {
-    const docType: string = fileIcons[Math.floor(Math.random() * fileIcons.length) + 0].name;
-    return {
-      docType,
-      url: `https://static2.sharepointonline.com/files/fabric/assets/brand-icons/document/svg/${docType}_16x1.svg`
-    };
+  private share(item:ITeamFileItem){
+    const sharingUrl = `https://o.o365cn.com/open?did=${item.driveId}&iid=${item.driveItemId}&dtype=business&fn=${item.name}&fs=${item.size}`;
+    this.setState({
+      showSharingModal:true,
+      sharingUrl:sharingUrl,
+      currentSharingItem:item
+    })
+  }
+
+  private closeModal(){
+    this.setState({
+      showSharingModal:false,
+    })
+  }
+
+  private getFileIcon(docType:string): string {
+    if(docType.startsWith('.')){
+      docType = docType.substr(1);
+    }
+    return `https://static2.sharepointonline.com/files/fabric/assets/brand-icons/document/svg/${docType}_16x1.svg`;
   }
 }
 
-function _buildColumns(): IColumn[] {
-  const _item = createListItems(1);
-  const columns: IColumn[] = buildColumns(_item);
-
-  for (const column of columns) {
+function buildTeamFileColumns(): IColumn[] {
+  const item: ITeamFileItem = {
+    type:"docx",
+    name:"test.docx",
+    driveId:"testId",
+    driveItemId:"testItemId",
+    thumbnail:"thumbnail",
+    displaySize:"1KB",
+    lastModifiedBy:"testUser",
+    size:100
+  }
+  const columns: IColumn[] = buildColumns([item],true);
+  const displayColums:IColumn[] = columns.filter(c=>c.key!="driveId"&&c.key!="driveItemId"&&c.key!="type"&&c.key!="size");
+  for (const column of displayColums) {
     if (column.key === 'thumbnail') {
-      column.name = 'FileType';
+      column.name = 'File Type';
       column.minWidth = 16;
       column.maxWidth = 16;
       column.isIconOnly = true;
       column.iconName = 'Page';
-      break;
+      column.isResizable = false;
+    }else if(column.key==='name'){
+      column.name = 'File Name';
+    }else if(column.key === 'displaySize'){
+      column.name = 'File Size';
+    }else if(column.key==='lastModifiedBy'){
+      column.name = 'Modified'
     }
-  }
 
-  return columns;
+  }
+  
+  displayColums.push({
+    name:'Share to WeChat',
+    key: 'sharetowechat',
+    minWidth:16,
+    maxWidth:16,
+    isResizable:false
+  })
+
+  return displayColums;
 }

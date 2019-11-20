@@ -12,6 +12,7 @@
     "@uifabric/example-data": "^7.0.1",
     "adal-angular": "^1.0.17",
     "office-ui-fabric-react": "^7.60.1",
+    "qrcode.react": "^1.0.0",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
     "react-router-dom": "^5.1.2",
