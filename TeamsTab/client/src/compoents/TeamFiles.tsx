@@ -2,7 +2,8 @@ import * as React from 'react';
 import authService from '../service/sso.auth.service';
 import teamfileService from '../service/team.file.service';
 import { Async } from 'office-ui-fabric-react/lib/Utilities';
-import { IColumn, buildColumns, SelectionMode, IconButton, IIconProps, Modal, MessageBar, MessageBarButton,DefaultButton, MessageBarType, Icon, Button } from 'office-ui-fabric-react/lib/index';
+import { IColumn, buildColumns,getTheme,
+  mergeStyleSets, SelectionMode, IconButton, IIconProps, Modal, MessageBar, MessageBarButton,DefaultButton, MessageBarType, FontWeights} from 'office-ui-fabric-react/lib/index';
 import { ShimmeredDetailsList } from 'office-ui-fabric-react/lib/ShimmeredDetailsList';
 import * as microsoftTeams from "@microsoft/teams-js";
 import { ConsentConsumer } from './ConsentContext';
@@ -12,7 +13,38 @@ var QRCode = require('qrcode.react');
 
 const shareIconProps: IIconProps = { iconName: 'Share' };
 
-
+const theme = getTheme();
+const styles = mergeStyleSets({
+  container: {
+    minHeight: '20vh',
+    width: '30vw',
+    display: 'flex',
+    flexFlow: 'column nowrap',
+    alignItems: 'stretch'
+  },
+  header: [
+    theme.fonts.xLargePlus,
+    {
+      flex: '1 1 auto',
+      background: theme.palette.themePrimary,
+      color: theme.palette.white,
+      display: 'flex',
+      fontWeight: FontWeights.semibold,
+      padding: '0 28px',
+      minHeight: '40px',
+      wordBreak: 'break-all'
+    }
+  ],
+  body: {
+    flex: '4 4 auto',
+    padding: '5px 28px',
+    overflowY: 'hidden'
+  },
+  qrcode:{
+    marginTop: '10px',
+    textAlign:'center'
+  }
+});
 interface ITeamFileItem{
   type:string;
   name:string;
@@ -138,10 +170,13 @@ export class TeamFiles extends React.Component<ITeamFileProps, IShimmerApplicati
           isOpen={(this.state.showSharingModal)}
           onDismiss={()=>{this.closeModal()}}
           isBlocking={false}
+          containerClassName={styles.container}
         >
-        <div>{this.state.currentSharingItem ? this.state.currentSharingItem.name : ''}</div>
-        <DefaultButton onClick={()=>{this.closeModal()}} text="Close" />
-        <QRCode value = {this.state.sharingUrl}/>
+           <div className={styles.header}>
+            <span>{this.state.currentSharingItem ? this.state.currentSharingItem.name : ''}</span>
+          </div>
+        <div className={styles.qrcode}><QRCode value = {this.state.sharingUrl}/></div>
+        {/* <DefaultButton onClick={()=>{this.closeModal()}} text="Close" /> */}
       </Modal>
       <ConsentConsumer>
             {({ consentRequired, requestConsent }) =>
